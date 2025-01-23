@@ -1,3 +1,23 @@
+# План текущий момент
+1. T model, S model знаю понятно
+   https://habr.com/ru/companies/ru_mts/articles/485980/
+   Список статей с хабра или отсюда https://causalml.readthedocs.io/en/latest/methodology.html
+2. R model, X model изучить
+   https://habr.com/ru/companies/glowbyte/articles/686398/
+
+3. Из EconML оставшиеся + аплифт леса
+https://habr.com/ru/companies/ru_mts/articles/485976/
+
+4. DragonNet, DESCN
+
+5. Для рл:
+Посмотреть курс шадовский
+https://github.com/oppsitre/RLift/blob/master/src/PolicyGradient.py
+DQN https://www.hse.ru/en/en/ma/sltheory/students/diplomas/page3.html/641461071
+
+6. Со звездочкой графовые нейронки https://arxiv.org/pdf/2311.08434
+
+
 # UpliftModelingResearch
 
 Работа будет посвящена поиску оптимальной модели по трейдофу между качеством и временем инференса.
