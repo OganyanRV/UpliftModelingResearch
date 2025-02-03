@@ -36,6 +36,9 @@ class NumpyDataset(IDataset):
     def __init__(self, path):
         IDataset.__init__(self)
         self.data = pd.read_csv(path, sep='\t')
+        self.col_treatment = "treatment"
+        self.col_target = "target"
+        self.cols_features = self.data.drop(["treatment", 'target'], axis=1).columns
 
 
 def sample_features(percents, train_data, test_data, output_dir):
