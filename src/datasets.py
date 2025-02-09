@@ -9,12 +9,6 @@ class IDataset(ABC):
     def __init__(self):
         self.data = None
 
-    # @abstractmethod
-    # def example(self):
-    #     """Загружает данные"""
-    #     pass
-
-
 class TorchDataset(IDataset, Dataset):
     def __init__(self, path):
         IDataset.__init__(self)
@@ -33,12 +27,31 @@ class TorchDataset(IDataset, Dataset):
         return self.data[idx], self.target[idx], self.treatment[idx]
 
 class NumpyDataset(IDataset):
-    def __init__(self, path):
+    def __init__(self, path=None, from_dataset=False, dataset=None):
         IDataset.__init__(self)
-        self.data = pd.read_csv(path, sep='\t')
+        if from_dataset == False:
+            self.data = pd.read_csv(path, sep='\t')
+        else:
+            self.data = dataset
         self.col_treatment = "treatment"
         self.col_target = "target"
         self.cols_features = self.data.drop(["treatment", 'target'], axis=1).columns
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return NumpyDataset(from_dataset=True, dataset=self.data.iloc[index])
+        elif isinstance(index, int):
+            if index < 0:
+                index += len(self.data)
+            if 0 <= index < len(self.data):
+                return self.data.iloc[index]
+            else:
+                raise IndexError(f"Индекс {index} выходит за пределы границ data")
+        else:
+            raise TypeError("Индекс должен быть int или slice")
+
+    def __len__(self):
+        return len(self.data)
 
 
 def sample_features(percents, train_data, test_data, output_dir):
