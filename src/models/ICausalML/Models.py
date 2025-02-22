@@ -16,8 +16,10 @@ class TModel(ICausalML):
 
     def __init__(self, config_json=None, from_load=False, path=None):
         super().__init__(config_json, from_load, path)
-        self.model = tlearner.BaseTClassifier(
-            control_learner=CatBoostClassifier(verbose=0, **self.config['lvl_1']['control']),
-            treatment_learner=CatBoostClassifier(verbose=0, **self.config['lvl_1']['treatment']),
-            **self.config['lvl_0']['meta']
-        )
+
+        if from_load==False:
+            self.model = tlearner.BaseTClassifier(
+                control_learner=CatBoostClassifier(verbose=0, **self.config['lvl_1']['control']),
+                treatment_learner=CatBoostClassifier(verbose=0, **self.config['lvl_1']['treatment']),
+                **self.config['lvl_0']['meta']
+            )

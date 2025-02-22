@@ -1,4 +1,4 @@
-from src.models.ICausalML.Models import *
+from src.models.ICausalML.Models import TModel
 from abc import ABC, abstractmethod
 from src.datasets import TorchDataset, NumpyDataset
 
