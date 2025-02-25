@@ -10,20 +10,21 @@ class ICausalML(IModelUplift):
     def __init__(self, config_json=None, from_load=False, path=None):
         super().__init__(config_json, from_load, path)
 
-    def fit(self, train):
+    def fit(self, train, p=0.5):
         self.model.fit(
             X=train.data.loc[:, train.cols_features].values,
             treatment=train.data.loc[:, train.col_treatment].values,
             y=train.data.loc[:, train.col_target].values,
+            p=np.repeat(p, 1)
         )
 
-    def predict(self, X: NumpyDataset):           
+    def predict(self, X: NumpyDataset, p=0.5):           
         scores = X.data.copy(deep=True)
-        scores['score'] = self.model.predict(scores.loc[:, X.cols_features])
+        scores['score'] = self.model.predict(scores.loc[:, X.cols_features], p=np.repeat(p, 1))
         return scores[['score', X.col_treatment, X.col_target]]
 
-    def predict_light(self, X: NumpyDataset):
-        self.model.predict(X.data.loc[:, X.cols_features])
+    def predict_light(self, X: NumpyDataset, p=0.5):
+        self.model.predict(X.data.loc[:, X.cols_features], p=np.repeat(p, 1))
 
     def save(self, path):
         with open(path, 'wb') as f:
