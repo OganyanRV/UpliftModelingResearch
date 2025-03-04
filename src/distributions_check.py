@@ -6,6 +6,19 @@ from catboost import CatBoostClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 
+def check_propensity(train, test):
+    model = CatBoostClassifier(iterations=50, verbose=False)
+    model.fit(train.drop(['treatment', 'target'], axis=1), train['treatment'])
+
+    pred_train = model.predict_proba(train.drop(['treatment', 'target'], axis=1))[:, 1]
+    pred_test = model.predict_proba(test.drop(['treatment', 'target'], axis=1))[:, 1]
+
+
+    auc_train = roc_auc_score(train['treatment'], pred_train)
+    auc_test = roc_auc_score(test['treatment'], pred_test)
+
+    print(f"AUC train: {auc_train:.4f}")
+    print(f"AUC test: {auc_test:.4f}")
 
 def check_feature_distributions_by_stat_test(train_data, test_data, print_ =False, plot=False):
     """

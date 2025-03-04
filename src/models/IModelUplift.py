@@ -16,20 +16,8 @@ class IModelUplift(ABC):
     """
 
     def __init__(self, config_json=None, from_load=False, path=None):
-        if from_load == False:
-            if config_json is None:
-                raise ValueError(f"No config while contstructing model.")
-            self.model = None
-            self.config = config_json
-        else:
-            if path is None:
-                raise ValueError(f"No config or model paths while contstructing model.")
-            # Дебильный баг, что если сделать self.moldel=loaded_model то models_t,
-            #models_s не будут внутри self.model
-            model, config = self.load(path)
-
-            self.model = model
-            self.config = config
+        self.model = None
+        self.config = None
 
     @abstractmethod
     def fit(self, X: NumpyDataset):

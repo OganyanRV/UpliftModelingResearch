@@ -112,19 +112,12 @@ def write_files(model, predictions, ds_name, features_percent):
     path_current_setup = f'{path_overall_stats}/{ds_name}/{features_percent}/{free_folder_number}'    
     os.makedirs(path_current_setup, exist_ok=True)
 
-    # Сохранение модели
-    model_path = os.path.join(path_current_setup, "model.pkl")
-    with open(model_path, "wb") as model_file:
-        pickle.dump(model.model, model_file)
-
+    # Сохранение модели конфига и тп
+    model.save(path_current_setup)
+    
     # Сохранение предсказаний
     predictions_path = os.path.join(path_current_setup, "predictions.tsv")
     predictions.to_csv(predictions_path, sep='\t', index=False)
-
-    # Сохранение конфига
-    config_path = os.path.join(path_current_setup, "config.json")
-    with open(config_path, "w") as config_file:
-        json.dump(model.config, config_file)
 
     return "exps/" + f"{ds_name}/{features_percent}/{free_folder_number}"
 

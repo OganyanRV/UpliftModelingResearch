@@ -5,8 +5,9 @@ import numpy as np
 import os
 import pickle
 import json
+from catboost import CatBoostClassifier
 
-class ICausalML(IModelUplift):
+class ICausalMLPropensity(IModelUplift):
     def __init__(self, config_json=None, from_load=False, path=None):
         super().__init__(config_json, from_load, path)
         if from_load == False:
@@ -14,31 +15,48 @@ class ICausalML(IModelUplift):
                 raise ValueError(f"No config while contstructing model.")
             self.model = None
             self.config = config_json
+            self.propensity = CatBoostClassifier(iterations=50, verbose=False)
         else:
             if path is None:
                 raise ValueError(f"No config or model paths while contstructing model.")
             # Дебильный баг, что если сделать self.moldel=loaded_model то models_t,
             #models_s не будут внутри self.model
-            model, config = self.load(path)
+            model, config, propensity = self.load(path)
 
             self.model = model
             self.config = config
+            self.propensity = propensity
 
     def fit(self, train):
+        self.propensity.fit(
+            train.data.loc[:, train.cols_features].values,
+            train.data.loc[:, train.col_treatment].values,
+        )
+        p = self.propensity.predict_proba(train.data.loc[:, train.cols_features].values)
         self.model.fit(
             X=train.data.loc[:, train.cols_features].values,
             treatment=train.data.loc[:, train.col_treatment].values,
             y=train.data.loc[:, train.col_target].values,
+            p=p
         )
-
+    
     def predict(self, X: NumpyDataset):           
         scores = X.data.copy(deep=True)
-        scores['score'] = self.model.predict(scores.loc[:, X.cols_features])
+        if self.propensity.is_fitted() == True:
+            p = self.propensity.predict_proba(X.data.loc[:, X.cols_features].values)[:, 1]
+        else:
+            p=np.repeat(p, 1)
+        scores['score'] = self.model.predict(scores.loc[:, X.cols_features], p=p)
         return scores[['score', X.col_treatment, X.col_target]]
-
+    
     def predict_light(self, X: NumpyDataset):
-        self.model.predict(X.data.loc[:, X.cols_features])
-
+        if self.propensity.is_fitted() == True:
+            p = self.propensity.predict_proba(X.data.loc[:, X.cols_features].values)[:, 1]
+        else:
+            p=np.repeat(p, 1)
+            
+        self.model.predict(X.data.loc[:, X.cols_features], p=p)
+    
     def save(self, path_current_setup):
         model_path = os.path.join(path_current_setup, "model.pkl")
         with open(model_path, "wb") as model_file:
@@ -46,10 +64,14 @@ class ICausalML(IModelUplift):
         config_path = os.path.join(path_current_setup, "config.json")
         with open(config_path, "w") as config_file:
             json.dump(self.config, config_file)
-
+        propensity_path = os.path.join(path_current_setup, "propensity.pkl")
+        with open(propensity_path, "wb") as propensity_file:
+            pickle.dump(self.propensity, propensity_file)
+    
     def load(self, path):
         config_path = path + "/config.json" 
         model_path = path + "/model.pkl"
+        propensity_path = path + "/propensity.pkl"
         if not os.path.exists(config_path):
             raise ValueError(f"No file found at '{config_path}'.")
         if not os.path.exists(model_path):
@@ -59,11 +81,14 @@ class ICausalML(IModelUplift):
             loaded_model = pickle.load(f)
         with open(config_path, 'rb') as f:
             loaded_config = json.load(f)
+        with open(propensity_path, 'rb') as f:
+            loaded_propensity = pickle.load(f)
             
         print(f"Model loaded from {model_path}.")
         print(f"Config loaded from {config_path}.")
+        print(f"Propensity loaded from {propensity_path}.")
 
-        return loaded_model, loaded_config
+        return loaded_model, loaded_config, loaded_propensity
 
 
     def measure_inference_time(self, data, batch_size, max_size=None):
