@@ -1,4 +1,5 @@
-from src.models.ICausalML.Models import TModel, SModel, XModel, DRModel
+from src.models.CausalML.Models import TModel, SModel, XModel, DRModel
+from src.models.ScikitML.Models import ClassTransformationModel, ClassTransformationRegModel
 from abc import ABC, abstractmethod
 from src.datasets import TorchDataset, NumpyDataset
 
@@ -38,6 +39,22 @@ class DRModelFactory(IFactory):
     @staticmethod
     def create(config_json, train_path, test_path):
         model = DRModel(config_json)
+        train = NumpyDataset(train_path)
+        test = NumpyDataset(test_path)
+        return model, train, test
+
+class ClassTransformationFactory(IFactory):
+    @staticmethod
+    def create(config_json, train_path, test_path):
+        model = ClassTransformationModel(config_json)
+        train = NumpyDataset(train_path)
+        test = NumpyDataset(test_path)
+        return model, train, test
+
+class ClassTransformationRegFactory(IFactory):
+    @staticmethod
+    def create(config_json, train_path, test_path):
+        model = ClassTransformationRegModel(config_json)
         train = NumpyDataset(train_path)
         test = NumpyDataset(test_path)
         return model, train, test

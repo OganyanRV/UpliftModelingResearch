@@ -1,7 +1,10 @@
 from src.models.CausalML.ICausalML import ICausalML
 from src.models.CausalML.ICausalMLPropensity import ICausalMLPropensity
+from src.configs_generation import generate_random_config_xgboost, generate_random_config_catboost, generate_random_config_catboost_reg
+from src.datasets import NumpyDataset
+
 from catboost import CatBoostClassifier, CatBoostRegressor
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier, XGBRegressor
 import causalml
 import causalml.metrics as cmetrics
 import causalml.inference.tree as ctree
@@ -11,7 +14,6 @@ import causalml.inference.meta.rlearner as rlearner
 import causalml.inference.meta.xlearner as xlearner
 import causalml.inference.meta.drlearner as drlearner
 from causalml.inference.tree import UpliftTreeClassifier, UpliftRandomForestClassifier
-from src.datasets import NumpyDataset
 import numpy as np
 import os
 import pickle
@@ -27,9 +29,32 @@ class TModel(ICausalML):
 
         if from_load==False:
             self.model = tlearner.BaseTClassifier(
-                learner=CatBoostClassifier(verbose=0, **self.config['lvl_1']['meta']),
+                control_learner=CatBoostClassifier(verbose=0, **self.config['lvl_1']['control']),
+                treatment_learner=CatBoostClassifier(verbose=0, **self.config['lvl_1']['treatment']),
                 **self.config['lvl_0']['meta']
             )
+            
+    @staticmethod
+    def generate_config(count, **params):
+        configs = []
+        for _ in range(count):
+            treatment_config = generate_random_config_catboost(params)
+            control_config = generate_random_config_catboost(params)
+    
+            config = {
+                        "lvl_0": {
+                            "meta": {
+                                "control_name": 0
+                            }
+                        },
+                        "lvl_1": {
+                            "treatment": treatment_config,
+                            "control": control_config
+                        }
+                    }
+    
+            configs.append(config)
+        return configs
 
 class SModel(ICausalML):
     """
@@ -41,10 +66,29 @@ class SModel(ICausalML):
 
         if from_load==False:
             self.model = slearner.BaseSClassifier(
-                learner=XGBClassifier(verbose=0, **self.config['lvl_1']['meta']),
+                learner=XGBClassifier(verbosity=0, **self.config['lvl_1']['meta']),
                 **self.config['lvl_0']['meta']
             )
-
+            
+    @staticmethod
+    def generate_config(count, **params):
+        configs = []
+        for _ in range(count):
+            config = generate_random_config_xgboost(params)
+    
+            config = {
+                        "lvl_0": {
+                            "meta": {
+                                "control_name": 0
+                            }
+                        },
+                        "lvl_1": {
+                            "meta": config
+                        }
+                    }
+    
+            configs.append(config)
+        return configs
 
 class XModel(ICausalMLPropensity):
     """
@@ -61,6 +105,28 @@ class XModel(ICausalMLPropensity):
                 **self.config['lvl_0']['meta']
             )
 
+    @staticmethod
+    def generate_config(count, **params):
+        configs = []
+        for _ in range(count):
+            config_outcome = generate_random_config_catboost(params)
+            config_effect = generate_random_config_catboost_reg(params)
+    
+            config = {
+                        "lvl_0": {
+                            "meta": {
+                                "control_name": 0
+                            }
+                        },
+                        "lvl_1": {
+                            "outcome": config_outcome,
+                            "effect": config_effect
+                        }
+                    }
+    
+            configs.append(config)
+        return configs
+
 
 class DRModel(ICausalMLPropensity):
     """
@@ -75,3 +141,24 @@ class DRModel(ICausalMLPropensity):
                 learner=CatBoostRegressor(verbose=0, **self.config['lvl_1']['meta']),
                 **self.config['lvl_0']['meta']
             )
+
+    @staticmethod
+    def generate_config(count, **params):
+        configs = []
+        for _ in range(count):
+            config = generate_random_config_catboost_reg(params)
+    
+            config = {
+                        "lvl_0": {
+                            "meta": {
+                                "control_name": 0
+                            }
+                        },
+                        "lvl_1": {
+                            "meta": config
+                        }
+                    }
+    
+            configs.append(config)
+        return configs
+        

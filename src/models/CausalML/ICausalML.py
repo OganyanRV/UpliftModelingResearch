@@ -92,3 +92,7 @@ class ICausalML(IModelUplift):
     
         mean_inference_time = np.mean(inference_times)
         return mean_inference_time
+
+    @staticmethod
+    def generate_config(**params):
+        pass

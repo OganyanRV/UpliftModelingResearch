@@ -6,7 +6,7 @@ import os
 import pickle
 import json
 
-class IscikitML(IModelUplift):
+class IScikitML(IModelUplift):
     def __init__(self, config_json=None, from_load=False, path=None):
         super().__init__(config_json, from_load, path)
         if from_load == False:
@@ -90,3 +90,8 @@ class IscikitML(IModelUplift):
     
         mean_inference_time = np.mean(inference_times)
         return mean_inference_time
+
+
+    @staticmethod
+    def generate_config(self, **params):
+        pass
