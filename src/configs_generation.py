@@ -42,3 +42,20 @@ def generate_random_config_catboost_reg(params):
             }
 
     return config
+
+def generate_random_config_rf(params):
+    n_estimators = random.randint(*params['n_estimators'])
+    max_depth = random.randint(*params['max_depth'])
+    min_samples_leaf = random.randint(*params['min_samples_leaf'])
+    n_reg = random.randint(*params['n_reg'])
+    evaluationFunction=params["evaluationFunction"]
+    
+    config = {
+                "n_estimators": n_estimators,
+                "max_depth" : max_depth,
+                "min_samples_leaf" : min_samples_leaf,
+                "n_reg": n_reg,
+                "evaluationFunction": evaluationFunction
+            }
+
+    return config

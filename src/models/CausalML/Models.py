@@ -1,6 +1,6 @@
 from src.models.CausalML.ICausalML import ICausalML
 from src.models.CausalML.ICausalMLPropensity import ICausalMLPropensity
-from src.configs_generation import generate_random_config_xgboost, generate_random_config_catboost, generate_random_config_catboost_reg
+from src.configs_generation import generate_random_config_xgboost, generate_random_config_catboost, generate_random_config_catboost_reg, generate_random_config_rf
 from src.datasets import NumpyDataset
 
 from catboost import CatBoostClassifier, CatBoostRegressor
@@ -18,6 +18,7 @@ import numpy as np
 import os
 import pickle
 import json
+from sklearn.model_selection import train_test_split
 
 class TModel(ICausalML):
     """
@@ -161,4 +162,66 @@ class DRModel(ICausalMLPropensity):
     
             configs.append(config)
         return configs
+
+
+class UpliftRandomForestModel(ICausalML):
+    """
+    Случайный лес на основе деревьев, оптимизирующих аплифт напрямую с помощью causalml.
+    """
+
+    def __init__(self, config_json=None, from_load=False, path=None):
+        super().__init__(config_json, from_load, path)
+
+        if from_load==False:
+            self.model = UpliftRandomForestClassifier(**self.config['lvl_0']['meta'])
+
+    @staticmethod
+    def generate_config(count, **params):
+        configs = []
+        for _ in range(count):
+            config = generate_random_config_rf(params)
+    
+            config = {
+                        "lvl_0": {
+                            "meta": {
+                                **config,
+                                'control_name': '0'
+                            }
+                        }
+                    }
+    
+            configs.append(config)
+        return configs
+
+    def fit(self, train):
+        indices = np.arange(len(train))
+        train_indices, val_indices = train_test_split(indices, test_size=0.25, random_state=42)
+        X=train.data.loc[:, train.cols_features].values[train_indices]
+        X_val=train.data.loc[:, train.cols_features].values[val_indices]
+        treatment=train.data.loc[:, train.col_treatment].values.astype(str)[train_indices]
+        treatment_val=train.data.loc[:, train.col_treatment].values.astype(str)[val_indices]
+        y=train.data.loc[:, train.col_target].values[train_indices]
+        y_val=train.data.loc[:, train.col_target].values[val_indices]
         
+        # self.model.fit(
+        #     X=X,
+        #     treatment=treatment,
+        #     y=y,
+        #     X_val=X_val,
+        #     treatment_val=treatment_val,
+        #     y_val=y_val            
+        # )
+
+        self.model.fit(
+            X=X,
+            treatment=treatment,
+            y=y
+        )
+
+    def predict(self, X: NumpyDataset):           
+        scores = X.data.copy(deep=True)
+        scores['score'] = self.model.predict(scores.loc[:, X.cols_features])
+        return scores[['score', X.col_treatment, X.col_target]]
+
+    def predict_light(self, X: NumpyDataset):
+        self.model.predict(X.data.loc[:, X.cols_features])
