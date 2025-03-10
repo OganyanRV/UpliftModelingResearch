@@ -203,20 +203,20 @@ class UpliftRandomForestModel(ICausalML):
         y=train.data.loc[:, train.col_target].values[train_indices]
         y_val=train.data.loc[:, train.col_target].values[val_indices]
         
-        # self.model.fit(
-        #     X=X,
-        #     treatment=treatment,
-        #     y=y,
-        #     X_val=X_val,
-        #     treatment_val=treatment_val,
-        #     y_val=y_val            
-        # )
-
         self.model.fit(
             X=X,
             treatment=treatment,
-            y=y
+            y=y,
+            X_val=X_val,
+            treatment_val=treatment_val,
+            y_val=y_val            
         )
+
+        # self.model.fit(
+        #     X=X,
+        #     treatment=treatment,
+        #     y=y
+        # )
 
     def predict(self, X: NumpyDataset):           
         scores = X.data.copy(deep=True)
