@@ -12,7 +12,7 @@ def calculate_plot_for_uplift_curve(df):
     population = []
     uplift = []
     
-    values = list(df[["score", col_treatment, col_target]].values)
+    values = list(df[["score", COL_TREATMENT, COL_TARGET]].values)
     values.sort(key=lambda x: -x[0])
     
     num_treatment = 0
@@ -61,8 +61,8 @@ def get_auuc(predicted):
     """
     ml_auuc, random_auuc = cmetrics.auuc_score(
         predicted, 
-        outcome_col=col_target, 
-        treatment_col=col_treatment, 
+        outcome_col=COL_TARGET, 
+        treatment_col=COL_TREATMENT, 
     )
 
     return ml_auuc

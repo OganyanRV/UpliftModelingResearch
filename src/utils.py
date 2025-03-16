@@ -15,8 +15,8 @@ def get_paths_train_test(ds_name, features_percent):
     path_to_data_train = f'data/{ds_name}/{features_percent}/train.tsv'
     path_to_data_test = f'data/{ds_name}/{features_percent}/test.tsv'
 
-    path_to_data_train = BASE_PATH / path_to_data_train
-    path_to_data_test = BASE_PATH / path_to_data_test
+    path_to_data_train = BASE_PATH + '/' + path_to_data_train
+    path_to_data_test = BASE_PATH + '/' + path_to_data_test
 
     return path_to_data_train, path_to_data_test
 
@@ -56,15 +56,15 @@ def append_exp(model, test, predicted, ds_name, features_percent,
                path_current_setup, compressions,
               batch_size=32, max_size=200000):
     
-    path_exps_stats = BASE_PATH / "exps/stats.tsv"
+    path_exps_stats = BASE_PATH + "/" + EXPS_PATH + "/stats.tsv"
     
     model_name = model.__class__.__name__
     inference_time_ms = model.measure_inference_time(test, batch_size, max_size=max_size)
-    size_model_mb = os.path.getsize(str(BASE_PATH) + "/" + path_current_setup + "/model.pkl") / 1e6
+    size_model_mb = os.path.getsize(BASE_PATH + "/" + path_current_setup + "/model.pkl") / 1e6
     auuc_model = get_auuc(predicted)
     compressions = compressions or {}
-    uplift_precision = uplift_by_percentile_CUM(predicted[col_target], predicted["score"],
-                                                predicted[col_treatment], strategy='overall', bins=20)
+    uplift_precision = uplift_by_percentile_CUM(predicted[COL_TARGET], predicted["score"],
+                                                predicted[COL_TREATMENT], strategy='overall', bins=20)
     uplift_5 = uplift_precision.loc['5'].uplift
     uplift_10 = uplift_precision.loc['15'].uplift
     uplift_15 = uplift_precision.loc['20'].uplift
@@ -102,7 +102,7 @@ def write_files(model, predictions, ds_name, features_percent):
     Функция создает папку в нужной директории и записывает туда бинарик модели, предикты модели и конфиг.
     """
 
-    path_overall_stats = BASE_PATH / "exps" 
+    path_overall_stats = BASE_PATH + "/" + EXPS_PATH
     
     free_folder_number = 0
     os.makedirs(f'{path_overall_stats}/{ds_name}', exist_ok=True)
@@ -119,7 +119,7 @@ def write_files(model, predictions, ds_name, features_percent):
     predictions_path = os.path.join(path_current_setup, "predictions.tsv")
     predictions.to_csv(predictions_path, sep='\t', index=False)
 
-    return "exps/" + f"{ds_name}/{features_percent}/{free_folder_number}"
+    return EXPS_PATH + "/" + f"{ds_name}/{features_percent}/{free_folder_number}"
 
 
 def write(model, test, predictions, ds_name, features_percent, compressions= None,

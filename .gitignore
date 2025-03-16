@@ -3,7 +3,7 @@
 catboost_info
 /data
 /exps/lazada
-
+/exps/lazada2
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,6 +1,8 @@
 import pathlib
 import os
 
-col_treatment = "treatment"
-col_target = "target"
-BASE_PATH = pathlib.Path(os.path.dirname(os.path.abspath(__file__))).parent
+COL_TREATMENT = "treatment"
+COL_TARGET = "target"
+BASE_PATH = str(pathlib.Path(os.path.dirname(os.path.abspath(__file__))).parent)
+EXPS_PATH = "exps"
+SEED = 1237451

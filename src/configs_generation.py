@@ -1,4 +1,5 @@
 import random
+from src.global_params import SEED
 
 def generate_random_config_catboost(params):
     iterations = random.randint(*params['iterations'])
@@ -10,7 +11,8 @@ def generate_random_config_catboost(params):
                 "learning_rate": learning_rate,
                 "depth": depth,
                 "loss_function": "Logloss",
-                "eval_metric": "AUC"
+                "eval_metric": "AUC",
+                "random_seed": SEED
             }
 
     return config
@@ -25,7 +27,8 @@ def generate_random_config_xgboost(params):
         'learning_rate': learning_rate,
         'max_depth': depth,
         'objective': 'binary:logistic',
-        'eval_metric': 'auc'
+        'eval_metric': 'auc',
+        "seed": SEED
     }
     
     return config
@@ -38,7 +41,8 @@ def generate_random_config_catboost_reg(params):
     config = {
                 "iterations": iterations,
                 "learning_rate": learning_rate,
-                "depth": depth
+                "depth": depth,
+                "random_seed": SEED
             }
 
     return config
@@ -55,7 +59,8 @@ def generate_random_config_rf(params):
                 "max_depth" : max_depth,
                 "min_samples_leaf" : min_samples_leaf,
                 "n_reg": n_reg,
-                "evaluationFunction": evaluationFunction
+                "evaluationFunction": evaluationFunction,
+                "random_state": SEED
             }
 
     return config
