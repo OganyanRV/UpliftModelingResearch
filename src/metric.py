@@ -2,6 +2,11 @@ from src.global_params import *
 
 from itertools import accumulate 
 from sklearn.utils.validation import check_consistent_length
+from sklift.metrics import (
+    uplift_curve, perfect_uplift_curve, uplift_auc_score,
+    qini_curve, perfect_qini_curve, qini_auc_score,
+    treatment_balance_curve, uplift_by_percentile
+)
 import causalml.metrics as cmetrics
 import numpy as np
 import pandas as pd
@@ -59,13 +64,19 @@ def get_auuc(predicted):
     """
     Возвращает AUUC модели
     """
-    ml_auuc, random_auuc = cmetrics.auuc_score(
-        predicted, 
-        outcome_col=COL_TARGET, 
-        treatment_col=COL_TREATMENT, 
-    )
+    # ml_auuc, random_auuc = cmetrics.auuc_score(
+    #     predicted, 
+    #     outcome_col=COL_TARGET, 
+    #     treatment_col=COL_TREATMENT, 
+    # )
 
-    return ml_auuc
+    return uplift_auc_score(predicted[COL_TARGET], predicted.score, predicted[COL_TREATMENT])
+
+def get_qini(predicted):
+    """
+    Возвращает AUUQ модели
+    """
+    return qini_auc_score(predicted[COL_TARGET], predicted.score, predicted[COL_TREATMENT])
 
 # Переписывал библиотечные функции scikit-uplift так как не было функционала CUMMULATIVE    
 # 2 переписал под свои нужды, остальные скопировал и поправил пару строк, в которых либа багует

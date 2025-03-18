@@ -4,7 +4,7 @@ import numpy as np
 import os
 import json
 import pickle
-from src.metric import get_auuc, uplift_by_percentile_CUM
+from src.metric import get_auuc, get_qini, uplift_by_percentile_CUM
 import pandas as pd
 
 def get_paths_train_test(ds_name, features_percent):
@@ -40,12 +40,14 @@ def make_stats_table(path):
         'Features Percent',
         'Latency (ms)',
         'Binary Size (MB)',
-        "AUUC (test)",
+        "AUUC",
+        "AUQC",
         "Precision@5",
         "Precision@10",
         "Precision@15",
         "Precision@20",
         "Precision@25",
+        "Precision@30",
         "Precision@50",
         "Compressions"    
     ])
@@ -62,6 +64,7 @@ def append_exp(model, test, predicted, ds_name, features_percent,
     inference_time_ms = model.measure_inference_time(test, batch_size, max_size=max_size)
     size_model_mb = os.path.getsize(BASE_PATH + "/" + path_current_setup + "/model.pkl") / 1e6
     auuc_model = get_auuc(predicted)
+    auqc_model = get_qini(predicted)
     compressions = compressions or {}
     uplift_precision = uplift_by_percentile_CUM(predicted[COL_TARGET], predicted["score"],
                                                 predicted[COL_TREATMENT], strategy='overall', bins=20)
@@ -70,6 +73,7 @@ def append_exp(model, test, predicted, ds_name, features_percent,
     uplift_15 = uplift_precision.loc['20'].uplift
     uplift_20 = uplift_precision.loc['15'].uplift
     uplift_25 = uplift_precision.loc['25'].uplift
+    uplift_30 = uplift_precision.loc['30'].uplift
     uplift_50 = uplift_precision.loc['50'].uplift
 
     if os.path.exists(path_exps_stats) == False:
@@ -84,11 +88,13 @@ def append_exp(model, test, predicted, ds_name, features_percent,
         inference_time_ms,
         size_model_mb,
         auuc_model,
+        auqc_model,
         uplift_5,
         uplift_10,
         uplift_15,
         uplift_20,
         uplift_25,
+        uplift_30,
         uplift_50,
         compressions
     ]
