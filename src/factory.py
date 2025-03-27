@@ -43,7 +43,7 @@ class DRModelFactory(IFactory):
         test = NumpyDataset(test_path)
         return model, train, test
 
-class ClassTransformationFactory(IFactory):
+class ClassTransformationModelFactory(IFactory):
     @staticmethod
     def create(config_json, train_path, test_path):
         model = ClassTransformationModel(config_json)
@@ -51,7 +51,7 @@ class ClassTransformationFactory(IFactory):
         test = NumpyDataset(test_path)
         return model, train, test
 
-class ClassTransformationRegFactory(IFactory):
+class ClassTransformationRegModelFactory(IFactory):
     @staticmethod
     def create(config_json, train_path, test_path):
         model = ClassTransformationRegModel(config_json)
