@@ -1,0 +1,11 @@
+catboost==1.2.7
+causalml==0.15.2
+matplotlib==3.10.1
+numpy==2.2.4
+pandas==2.2.3
+scikit_learn==1.6.1
+scikit_uplift==0.5.1
+scipy==1.15.2
+torch==2.5.1
+tqdm==4.67.1
+xgboost==3.0.0
