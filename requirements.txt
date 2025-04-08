@@ -1,7 +1,7 @@
 catboost==1.2.7
 causalml==0.15.2
 matplotlib==3.10.1
-numpy==2.2.4
+numpy==1.26.4
 pandas==2.2.3
 scikit_learn==1.6.1
 scikit_uplift==0.5.1

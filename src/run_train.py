@@ -1,8 +1,10 @@
 from pathlib import Path
 import sys
- 
+import pathlib
+import os 
+
 if sys.argv:
-    sys.path.insert(0, str(Path('/Users/ogrobertino/UpliftModelingResearch/').resolve()))
+    sys.path.insert(0, str(pathlib.Path(os.path.dirname(os.path.abspath(""))).resolve()))
     
 import argparse
 from tqdm import tqdm
