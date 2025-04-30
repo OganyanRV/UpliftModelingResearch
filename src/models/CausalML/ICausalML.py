@@ -7,6 +7,9 @@ import pickle
 import json
 
 class ICausalML(IModelUplift):
+    """
+        Родительский класс для реализации классических моделей аплифт-моделирования с помощью causalml.
+    """
     def __init__(self, config_json=None, from_load=False, path=None):
         super().__init__(config_json, from_load, path)
         if from_load == False:

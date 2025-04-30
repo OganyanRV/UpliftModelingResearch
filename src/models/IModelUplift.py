@@ -1,4 +1,4 @@
-from src.datasets import sample_features, TorchDataset, NumpyDataset
+from src.datasets import sample_features, IDataset, TorchDataset, NumpyDataset
 
 import json
 import os
@@ -16,27 +16,35 @@ class IModelUplift(ABC):
     """
 
     def __init__(self, config_json=None, from_load=False, path=None):
+        """
+        Инициализация объекта модели.
+        
+        Args:
+            config_json: строка с JSON-конфигурацией модели
+            from_load: флаг, указывающий, что модель загружается из файла
+            path: путь для загрузки модели
+        """
         self.model = None
         self.config = None
 
     @abstractmethod
-    def fit(self, X: NumpyDataset):
+    def fit(self, X: IDataset):
         """
         Метод для обучения модели.
         """
         pass
 
     @abstractmethod
-    def predict(self, X: NumpyDataset):
+    def predict(self, X: IDataset):
         """
         Метод для предсказания.
         """
         pass
 
     @abstractmethod
-    def predict_light(self, X: NumpyDataset):
+    def predict_light(self, X: IDataset):
         """
-        Метод для предсказания.
+        Метод для предсказания без возвращения предикта.
         """
         pass
 
