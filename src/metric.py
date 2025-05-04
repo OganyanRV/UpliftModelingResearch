@@ -72,6 +72,13 @@ def get_auuc(predicted):
 
     return uplift_auc_score(predicted[COL_TARGET], predicted.score, predicted[COL_TREATMENT])
 
+def get_auuc_v2(uplift_scores, treatments, outcomes):
+    """
+    Возвращает AUUC модели
+    """
+
+    return uplift_auc_score(outcomes, uplift_scores, treatments)
+
 def get_qini(predicted):
     """
     Возвращает AUUQ модели
