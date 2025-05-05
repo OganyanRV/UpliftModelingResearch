@@ -21,16 +21,18 @@ def get_paths_train_test(ds_name, features_percent):
     return path_to_data_train, path_to_data_test
 
 
-def train_test_model(ds_name, features_percent, factory, config, compressions=None, batch_size=32, max_size=100000):
+def train_test_model(ds_name, features_percent, factory, config, compressions=None, batch_size=32, max_size=100000, NN = False):
     """
     Обучает модель, предиктит, сохраняет информацию о модели и добавляет статистики в общую таблицу
     """
     train_path, test_path = get_paths_train_test(ds_name=ds_name, features_percent=features_percent)
     model, train, test = factory.create(config, train_path, test_path)
-    model.fit(train)
+    # model.fit(train)
     predicted = model.predict(test)
+    if NN:
+        predicted = predicted["df"]
     write(model, test, predicted, ds_name=ds_name, features_percent=features_percent, compressions=compressions,
-          batch_size=batch_size, max_size=max_size)    
+          batch_size=batch_size, max_size=max_size, NN=NN)    
     
 def make_stats_table(path):
     table = pd.DataFrame(columns=[
@@ -56,13 +58,17 @@ def make_stats_table(path):
 
 def append_exp(model, test, predicted, ds_name, features_percent,
                path_current_setup, compressions,
-              batch_size=32, max_size=200000):
+              batch_size=32, max_size=200000, NN=False):
     
     path_exps_stats = BASE_PATH + "/" + EXPS_PATH + "/stats.tsv"
     
     model_name = model.__class__.__name__
-    inference_time_ms = model.measure_inference_time(test, batch_size, max_size=max_size)
-    size_model_mb = os.path.getsize(BASE_PATH + "/" + path_current_setup + "/model.pkl") / 1e6
+    if NN:
+        size_model_mb = 0
+    else:
+        size_model_mb = os.path.getsize(BASE_PATH + "/" + path_current_setup + "/model.pkl") / 1e6 
+
+    inference_time_ms = model.measure_inference_time(test, batch_size, max_size=max_size)    
     auuc_model = get_auuc(predicted)
     auqc_model = get_qini(predicted)
     compressions = compressions or {}
@@ -129,7 +135,7 @@ def write_files(model, predictions, ds_name, features_percent):
 
 
 def write(model, test, predictions, ds_name, features_percent, compressions= None,
-         batch_size=32, max_size=100000):
+         batch_size=32, max_size=100000, NN=False):
     """
     Сохраняет метрики в общую таблицу и модель с конфигом для каждого отдельного запуска
     model - модель
@@ -141,5 +147,5 @@ def write(model, test, predictions, ds_name, features_percent, compressions= Non
     """
     path_current_setup = write_files(model, predictions, ds_name, features_percent)
     print(f"Модель, предсказания и конфиг сохранены в директории {path_current_setup}")
-    path_exp = append_exp(model, test, predictions, ds_name, features_percent, path_current_setup, compressions, batch_size, max_size)
+    path_exp = append_exp(model, test, predictions, ds_name, features_percent, path_current_setup, compressions, batch_size, max_size, NN)
     print(f"Эксперимент сохранен в таблице {path_exp}")

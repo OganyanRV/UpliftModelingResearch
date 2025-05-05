@@ -9,6 +9,7 @@ from typing import Dict, List, Union, Optional, Tuple
 from torch.utils.data import DataLoader
 from src.models.IModelUplift import IModelUplift
 from src.datasets import TorchDataset
+from src.metric import get_auuc_v2
 
 class INNUpliftModeling(IModelUplift):
     """
@@ -38,6 +39,7 @@ class INNUpliftModeling(IModelUplift):
             self.device = torch.device('cuda' if torch.cuda.is_available() and self.config.get('use_gpu', True) else 'cpu')
             self._initialize_model()
             self._setup_optimizer_and_scheduler()
+            self.history = {}
         else:
             if path is None:
                 raise ValueError(f"No config or model paths while contstructing model.")
@@ -166,6 +168,7 @@ class INNUpliftModeling(IModelUplift):
             self.model.train()
             
             for batch_idx, batch in enumerate(train_loader):
+                self.model.train()
                 features, treatment, outcome = batch     
                 
                 outputs = self.model(features)
@@ -188,7 +191,7 @@ class INNUpliftModeling(IModelUplift):
             avg_train_loss = epoch_loss / num_batches
 
             # ---- validation ----
-            print(f"Validation")
+            print(f"Validation after epoch")
             val_loss, val_auuc = self._evaluate(val_loader)
             
             if self.scheduler is not None:
@@ -226,7 +229,7 @@ class INNUpliftModeling(IModelUplift):
                     self.model.load_state_dict(best_model_state)
                     break
         
-        return history
+        self.history = history
 
     def _evaluate(self, data_loader):
         """
@@ -273,53 +276,57 @@ class INNUpliftModeling(IModelUplift):
         batch_size = self.config.get('inference_batch_size', 32)
         data_loader = self._prepare_data_loader(X, batch_size, shuffle=False)
         
-        y0_list, y1_list, uplift_list = [], [], []
+        y0_list, y1_list, uplift_list, treatment_list, outcome_list = [], [], [], [], []
         
         with torch.no_grad():
             for batch in data_loader:
-                features, treatment, _ = batch
+                features, treatment, outcome = batch
                 
                 outputs = self.model(features)
                 
                 y0_list.append(outputs['y0'].cpu())
                 y1_list.append(outputs['y1'].cpu())
                 uplift_list.append(outputs['uplift'].cpu())
+                treatment_list.append(treatment.cpu())
+                outcome_list.append(outcome.cpu())
         y0 = torch.cat(y0_list, dim=0).numpy()
         y1 = torch.cat(y1_list, dim=0).numpy()
         uplift = torch.cat(uplift_list, dim=0).numpy()
-        
+        treatment = torch.cat(treatment_list, dim=0).numpy()
+        outcome = torch.cat(outcome_list, dim=0).numpy()
+
+        df = pd.DataFrame({'score': uplift[:, 0], 'treatment': treatment, 'target':outcome})
         return {
             'y0': y0,
             'y1': y1,
-            'uplift': uplift
+            'uplift': uplift,
+            'df': df
         }
     
-    def predict_light(self, X: TorchDataset):
-        """
-        Легкая версия предсказания (без возврата значений).
-        """
-        # self.model.eval()
-        
-        # batch_size = self.config.get('inference_batch_size', 64)
-        # data_loader = self._prepare_data_loader(X, batch_size, shuffle=False)
-        
-        # with torch.no_grad():
-        #     for batch in data_loader:
-        #         features, treatment, _ = batch
-        #         _ = self.model(features)
+    def predict_light(self, X: DataLoader):
         pass
+    #     """
+    #     Легкая версия предсказания (без возврата значений).
+    #     """
+    #     self.model.eval()
+        
+    #     with torch.no_grad():
+    #         for batch in X:
+    #             features, treatment, _ = batch
+    #             _ = self.model(features)
     
-    def save(self, path):
+    def save(self, path_current_setup):
         """
         Сохранение модели в файл.
         """
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        path = os.path.join(path_current_setup, "model.pkl")
         
         # Подготовка данных для сохранения
         save_data = {
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
-            'config': self.config
+            'config': self.config,
+            'history': self.history
         }
         
         if self.scheduler is not None:
@@ -327,10 +334,11 @@ class INNUpliftModeling(IModelUplift):
         
         torch.save(save_data, path)
     
-    def load(self, path):
+    def load(self, path_current_setup):
         """
         Загрузка модели из файла.
         """
+        path = os.path.join(path_current_setup, "model.pkl")
         if not os.path.exists(path):
             raise FileNotFoundError(f"Model file not found: {path}")
             
@@ -345,6 +353,8 @@ class INNUpliftModeling(IModelUplift):
         
         self._setup_optimizer_and_scheduler()
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+        self.history = checkpoint['history']
         
         if 'scheduler_state_dict' in checkpoint and self.scheduler is not None:
             self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
@@ -366,8 +376,9 @@ class INNUpliftModeling(IModelUplift):
     
         cur_size = 0
         for batch in data_loader:
+            features, _, _ = batch
             start_time = time.time()
-            predictions = self.forward(batch)
+            _ = self.model(features)
             end_time = time.time() 
             
             inference_times.append((end_time - start_time) * 1000 / batch_size)
