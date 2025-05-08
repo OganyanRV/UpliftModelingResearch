@@ -42,51 +42,66 @@ class DESCNUpliftModel(INNUpliftModeling):
     def _compute_loss(self, outputs, outcome, treatment):
         """
         Вычисление функции потерь для DESCN.
-        
-        Args:
-            outputs: выход модели
-            outcome: целевая переменная
-            treatment: индикатор воздействия
-            
-        Returns:
-            Значение функции потерь
         """
-        # Извлечение необходимых выходов модели
-        mu1_logit = outputs['mu1_logit']
-        mu0_logit = outputs['mu0_logit']
+        # Распаковка необходимых выходов модели
         p_prpsy_logit = outputs['p_prpsy_logit']
+        p_estr = outputs['p_estr']
+        p_escr = outputs['p_escr']
+        p_tau_logit = outputs['tau_logit']
+        p_mu1_logit = outputs['mu1_logit']
+        p_mu0_logit = outputs['mu0_logit']
+        shared_h = outputs['shared_h']
         
-        # Веса для разных компонентов потери
-        factual_loss_weight = self.config.get('factual_loss_weight', 1.0)
-        propensity_loss_weight = self.config.get('propensity_loss_weight', 0.1)
-        tau_loss_weight = self.config.get('tau_loss_weight', 0.1)
+        # Веса для разных компонентов потери из конфигурации
+        prpsy_w = self.config.get('prpsy_w', 1.0)
+        escvr1_w = self.config.get('escvr1_w', 1.0)
+        escvr0_w = self.config.get('escvr0_w', 1.0)
+        mu1hat_w = self.config.get('mu1hat_w', 1.0)
+        mu0hat_w = self.config.get('mu0hat_w', 1.0)
         
-        # Формируем маски для групп воздействия и контроля
-        treatment_mask = (treatment == 1).float().unsqueeze(1)
-        control_mask = (treatment == 0).float().unsqueeze(1)
+        # Преобразование целевой переменной и индикатора воздействия
+        y_labels = outcome.unsqueeze(1).float()
+        t_labels = treatment.unsqueeze(1).float()
         
-        # Фактическая потеря - MSE для фактических наблюдений
-        y_pred = treatment_mask * mu1_logit + control_mask * mu0_logit
-        factual_loss = F.mse_loss(y_pred, outcome.unsqueeze(1))
+        # Маски для групп воздействия и контроля
+        treatment_mask = t_labels.bool()
+        control_mask = ~treatment_mask
         
-        # Потеря для предсказания вероятности назначения воздействия
-        propensity_loss = F.binary_cross_entropy_with_logits(
-            p_prpsy_logit.squeeze(), 
-            treatment
+        loss_fn = nn.BCELoss()
+        loss_with_logit_fn = nn.BCEWithLogitsLoss()
+        
+        prpsy_loss = prpsy_w * loss_with_logit_fn(p_prpsy_logit, t_labels)
+        
+        estr_loss = escvr1_w * loss_fn(p_estr, y_labels * t_labels)
+        escr_loss = escvr0_w * loss_fn(p_escr, y_labels * (1 - t_labels))
+
+        cross_tr_loss = mu1hat_w * loss_fn(
+            torch.sigmoid(p_mu0_logit + p_tau_logit)[treatment_mask],
+            y_labels[treatment_mask]
         )
+
+        cross_tr_loss = 0.0 if torch.isnan(cross_tr_loss) else cross_tr_loss
         
-        # Потеря для предсказания эффекта воздействия (если известно)
-        if self.config.get('use_tau_loss', False) and hasattr(self, 'tau_true'):
-            tau_loss = F.mse_loss(outputs['tau_logit'], self.tau_true)
-        else:
-            tau_loss = torch.tensor(0.0, device=self.device)
-        
-        # Общая потеря
-        total_loss = (
-            factual_loss_weight * factual_loss + 
-            propensity_loss_weight * propensity_loss + 
-            tau_loss_weight * tau_loss
+        cross_cr_loss = mu0hat_w * loss_fn(
+            torch.sigmoid(p_mu1_logit - p_tau_logit)[control_mask],
+            y_labels[control_mask]
         )
+
+        cross_cr_loss = 0.0 if torch.isnan(cross_cr_loss) else cross_cr_loss
+
+        # print(prpsy_loss, estr_loss, escr_loss, cross_cr_loss, cross_tr_loss)
+        total_loss = prpsy_loss + estr_loss + escr_loss + cross_tr_loss + cross_cr_loss
+        # print(total_loss)
+        if torch.isnan(total_loss):
+            print(prpsy_loss, estr_loss, escr_loss, cross_cr_loss, cross_tr_loss)
+            print(y_labels, y_labels.shape)
+            print(treatment_mask, treatment_mask.shape)
+            print(y_labels[treatment_mask])
+            print(p_mu0_logit + p_tau_logit)
+            print(torch.sigmoid(p_mu0_logit + p_tau_logit)[treatment_mask])
+            print(mu1hat_w)
+            
+            raise
         
         return total_loss
     
@@ -128,10 +143,12 @@ class DESCNUpliftModel(INNUpliftModeling):
             'do_rate': [0.1, 0.2, 0.3],  # Варианты dropout
             'batch_norm': [True, False], # Использование BatchNorm
             'normalization': ['none', 'divide'], # Тип нормализации
-            'factual_loss_weight': [0.8, 1.0, 1.2], # Вес фактической потери
-            'propensity_loss_weight': [0.05, 0.1, 0.2], # Вес потери пропенсити
-            'tau_loss_weight': [0.05, 0.1, 0.2],    # Вес потери tau (если применимо)
-            'gradient_accumulation_steps' : 2
+            'prpsy_w': 0.5,   # Вес для потери пропенсити
+            'escvr1_w': 0.5,  # Вес для потери ESTR
+            'escvr0_w': 1.0,  # Вес для потери ESCR
+            'mu1hat_w': 1.0,  # Вес для перекрестной потери TR
+            'mu0hat_w': 0.5,  # Вес для перекрестной потери CR
+            'gradient_accumulation_steps' : 2 # Количество шагов для аккумуляции градиентов
         }
         
         # Объединение с переданными параметрами

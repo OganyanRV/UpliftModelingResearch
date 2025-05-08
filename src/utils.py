@@ -27,7 +27,7 @@ def train_test_model(ds_name, features_percent, factory, config, compressions=No
     """
     train_path, test_path = get_paths_train_test(ds_name=ds_name, features_percent=features_percent)
     model, train, test = factory.create(config, train_path, test_path)
-    # model.fit(train)
+    model.fit(train)
     predicted = model.predict(test)
     if NN:
         predicted = predicted["df"]

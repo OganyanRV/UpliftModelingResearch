@@ -175,16 +175,15 @@ class DESCN(nn.Module):
 
         p_mu1 = torch.sigmoid(mu1_logit)
         p_mu0 = torch.sigmoid(mu0_logit)
-        p_h1 = p_mu1  # Refer to the naming in TARnet/CFR
-        p_h0 = p_mu0  # Refer to the naming in TARnet/CFR
 
         # entire space
-        p_estr = torch.mul(p_prpsy, p_h1)
+        p_estr = torch.mul(p_prpsy, p_mu1)
         p_i_prpsy = 1 - p_prpsy
-        p_escr = torch.mul(p_i_prpsy, p_h0)
+        p_escr = torch.mul(p_i_prpsy, p_mu0)
         
         # Рассчитываем аплифт (эффект воздействия)
-        uplift = mu1_logit - mu0_logit
+        uplift = p_mu1 - p_mu0
+        # uplift = p_estr - p_escr
 
         return {
             'p_prpsy_logit': p_prpsy_logit,
@@ -196,8 +195,6 @@ class DESCN(nn.Module):
             'p_prpsy': p_prpsy,
             'p_mu1': p_mu1,
             'p_mu0': p_mu0,
-            'p_h1': p_h1,
-            'p_h0': p_h0,
             'shared_h': shared_h,
             'uplift': uplift,
             'y1': mu1_logit,
