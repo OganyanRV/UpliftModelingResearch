@@ -26,7 +26,7 @@ class TorchDataset(IDataset, Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        return self.data[idx], self.target[idx], self.treatment[idx]
+        return self.data[idx], self.treatment[idx], self.target[idx]
 
 class NumpyDataset(IDataset):
     def __init__(self, path=None, from_dataset=False, dataset=None):

@@ -196,7 +196,5 @@ class DESCN(nn.Module):
             'p_mu1': p_mu1,
             'p_mu0': p_mu0,
             'shared_h': shared_h,
-            'uplift': uplift,
-            'y1': mu1_logit,
-            'y0': mu0_logit
+            'uplift': uplift
         }

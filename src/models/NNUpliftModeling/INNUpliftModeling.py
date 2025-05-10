@@ -276,7 +276,8 @@ class INNUpliftModeling(IModelUplift):
         batch_size = self.config.get('inference_batch_size', 32)
         data_loader = self._prepare_data_loader(X, batch_size, shuffle=False)
         
-        y0_list, y1_list, uplift_list, treatment_list, outcome_list = [], [], [], [], []
+        uplift_list, treatment_list, outcome_list = [], [], []
+        p_estr_list, p_escr_list, p_prpsy_list = [], [], []
         
         with torch.no_grad():
             for batch in data_loader:
@@ -284,23 +285,29 @@ class INNUpliftModeling(IModelUplift):
                 
                 outputs = self.model(features)
                 
-                y0_list.append(outputs['y0'].cpu())
-                y1_list.append(outputs['y1'].cpu())
                 uplift_list.append(outputs['uplift'].cpu())
                 treatment_list.append(treatment.cpu())
                 outcome_list.append(outcome.cpu())
-        y0 = torch.cat(y0_list, dim=0).numpy()
-        y1 = torch.cat(y1_list, dim=0).numpy()
+
+                p_estr_list.append(outputs["p_estr"].cpu())
+                p_escr_list.append(outputs["p_escr"].cpu())
+                p_prpsy_list.append(outputs["p_prpsy"].cpu())
+                
         uplift = torch.cat(uplift_list, dim=0).numpy()
         treatment = torch.cat(treatment_list, dim=0).numpy()
         outcome = torch.cat(outcome_list, dim=0).numpy()
 
+        p_estr = torch.cat(p_estr_list, dim=0).numpy()
+        p_escr = torch.cat(p_escr_list, dim=0).numpy()
+        p_prpsy = torch.cat(p_prpsy_list, dim=0).numpy()
+
         df = pd.DataFrame({'score': uplift[:, 0], 'treatment': treatment, 'target':outcome})
         return {
-            'y0': y0,
-            'y1': y1,
             'uplift': uplift,
-            'df': df
+            'df': df,
+            'p_estr': p_estr,
+            'p_escr': p_escr,
+            'p_prpsy': p_prpsy
         }
     
     def predict_light(self, X: DataLoader):
@@ -405,12 +412,12 @@ class INNUpliftModeling(IModelUplift):
             'early_stopping_patience': 2,
             'optimizer': {
                 'name': 'Adam',
-                'lr': 0.001,
-                'weight_decay': 0.0001
+                'lr': 0.005,
+                'weight_decay': 0.001
             },
             'scheduler': {
                 'name': 'ReduceLROnPlateau',
-                'patience': 5,
+                'patience': 1,
                 'factor': 0.5
             },
             'use_gpu': True,
