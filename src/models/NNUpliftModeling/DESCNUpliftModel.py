@@ -25,6 +25,7 @@ class DESCNUpliftModel(INNUpliftModeling):
         do_rate = self.config.get('do_rate', 0.2)
         batch_norm = self.config.get('batch_norm', False)
         normalization = self.config.get('normalization', 'none')
+        descn_version = self.config.get('descn_version', '3')  # '3' или '6' слоев
         
         if input_dim is None:
             raise ValueError("input_dim must be specified in the config")
@@ -36,7 +37,8 @@ class DESCNUpliftModel(INNUpliftModeling):
             do_rate=do_rate,
             device=self.device,
             batch_norm=batch_norm,
-            normalization=normalization
+            normalization=normalization,
+            descn_version=descn_version
         )
     
     def _compute_loss(self, outputs, outcome, treatment):

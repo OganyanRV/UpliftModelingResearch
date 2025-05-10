@@ -16,30 +16,82 @@ def safe_sqrt(x):
 class ShareNetwork(nn.Module):
     def __init__(self, input_dim, share_dim, base_dim, cfg, device):
         super(ShareNetwork, self).__init__()
-        if cfg.get('BatchNorm1d', 'false') == 'true':
-            self.DNN = nn.Sequential(
-                nn.BatchNorm1d(input_dim),
-                nn.Linear(input_dim, share_dim),
-                nn.ELU(),
-                nn.Dropout(p=cfg.get('do_rate', 0.2)),
-                nn.Linear(share_dim, share_dim),
-                nn.ELU(),
-                nn.Dropout(p=cfg.get('do_rate', 0.2)),
-                nn.Linear(share_dim, base_dim),
-                nn.ELU(),
-                nn.Dropout(p=cfg.get('do_rate', 0.2))
-            )
-        else:
-            self.DNN = nn.Sequential(
-                nn.Linear(input_dim, share_dim),
-                nn.ELU(),
-                nn.Dropout(p=cfg.get('do_rate', 0.2)),
-                nn.Linear(share_dim, share_dim),
-                nn.ELU(),
-                nn.Dropout(p=cfg.get('do_rate', 0.2)),
-                nn.Linear(share_dim, base_dim),
-                nn.ELU(),
-            )
+        
+        n_layers = cfg.get('descn_version', '3')
+        dropout_rate = cfg.get('do_rate', 0.2)
+        use_batch_norm = cfg.get('BatchNorm1d', 'false') == 'true'
+        
+        # Архитектура с 3 слоями
+        if n_layers == '3':
+            if use_batch_norm:
+                self.DNN = nn.Sequential(
+                    nn.BatchNorm1d(input_dim),
+                    nn.Linear(input_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, base_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate)
+                )
+            else:
+                self.DNN = nn.Sequential(
+                    nn.Linear(input_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, base_dim),
+                    nn.ELU()
+                )
+        
+        # Архитектура с 6 слоями
+        elif n_layers == '6':
+            if use_batch_norm:
+                self.DNN = nn.Sequential(
+                    nn.BatchNorm1d(input_dim),
+                    nn.Linear(input_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, base_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate)
+                )
+            else:
+                self.DNN = nn.Sequential(
+                    nn.Linear(input_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, share_dim),
+                    nn.ELU(),
+                    nn.Dropout(p=dropout_rate),
+                    nn.Linear(share_dim, base_dim),
+                    nn.ELU()
+                )
 
         self.DNN.apply(init_weights)
         self.cfg = cfg
@@ -59,17 +111,47 @@ class ShareNetwork(nn.Module):
 class BaseModel(nn.Module):
     def __init__(self, base_dim, cfg):
         super(BaseModel, self).__init__()
-        self.DNN = nn.Sequential(
-            nn.Linear(base_dim, base_dim),
-            nn.ELU(),
-            nn.Dropout(p=cfg.get('do_rate', 0.2)),
-            nn.Linear(base_dim, base_dim),
-            nn.ELU(),
-            nn.Dropout(p=cfg.get('do_rate', 0.2)),
-            nn.Linear(base_dim, base_dim),
-            nn.ELU(),
-            nn.Dropout(p=cfg.get('do_rate', 0.2))
-        )
+        
+        n_layers = cfg.get('descn_version', '3')
+        dropout_rate = cfg.get('do_rate', 0.2)
+        
+        # Архитектура с 3 слоями
+        if n_layers == '3':
+            self.DNN = nn.Sequential(
+                nn.Linear(base_dim, base_dim),
+                nn.ELU(),
+                nn.Dropout(p=dropout_rate),
+                nn.Linear(base_dim, base_dim),
+                nn.ELU(),
+                nn.Dropout(p=dropout_rate),
+                nn.Linear(base_dim, base_dim),
+                nn.ELU(),
+                nn.Dropout(p=dropout_rate)
+            )
+        
+        # Архитектура с 6 слоями
+        elif n_layers == '6':
+            self.DNN = nn.Sequential(
+                nn.Linear(base_dim, base_dim),
+                nn.ELU(),
+                nn.Dropout(p=dropout_rate),
+                nn.Linear(base_dim, base_dim),
+                nn.ELU(),
+                nn.Dropout(p=dropout_rate),
+                nn.Linear(base_dim, base_dim),
+                nn.ELU(),
+                nn.Dropout(p=dropout_rate),
+                nn.Linear(base_dim, base_dim),
+                nn.ELU(),
+                nn.Dropout(p=dropout_rate),
+                nn.Linear(base_dim, base_dim),
+                nn.ELU(),
+                nn.Dropout(p=dropout_rate),
+                nn.Linear(base_dim, base_dim),
+                nn.ELU(),
+                nn.Dropout(p=dropout_rate)
+            )
+            
         self.DNN.apply(init_weights)
 
     def forward(self, x):
@@ -139,13 +221,15 @@ class TauNetwork(nn.Module):
 
 class DESCN(nn.Module):
     """DESCN (Deep End-to-end Stochastic Causal Network)"""
-    def __init__(self, input_dim, share_dim, base_dim, do_rate, device, batch_norm=False, normalization="none"):
+    def __init__(self, input_dim, share_dim, base_dim, do_rate, device, batch_norm=False,
+                 normalization="none", descn_version='3'):
         super(DESCN, self).__init__()
-        # Конфигурация модели
+        
         cfg = {
             'do_rate': do_rate,
             'BatchNorm1d': 'true' if batch_norm else 'false',
-            'normalization': normalization
+            'normalization': normalization,
+            'descn_version': descn_version  # '3' или '6'
         }
         
         # Компоненты модели
