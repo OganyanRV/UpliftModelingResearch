@@ -110,8 +110,21 @@ class PairedUpliftDataset(IDataset, torch.utils.data.Dataset):
             self.treatment_indices = np.where(treatment_mask)[0]
             self.control_indices = np.where(control_mask)[0]
             
+            teacher_preds = teacher_model.predict(NumpyDataset(path)) # return p - q
+            # p + q == 1
+            # p - q == score
+            # p = (1+score) / 2
+            # q = (1-score) / 2
+
+            def f(x):
+                if x.treatment == 1:
+                    return (1 + x['score']) / 2
+                return (1 - x['score']) / 2
+    
+            teacher_preds['score2'] = teacher_preds.apply(f, axis=1)
+            
             self.teacher_preds = torch.tensor(
-                teacher_model.predict(NumpyDataset(path))["score"].values,
+                teacher_preds['score2'].values,
                 dtype=torch.float32
             )
         
