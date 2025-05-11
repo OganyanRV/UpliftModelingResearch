@@ -49,7 +49,7 @@ class ShareNetwork(nn.Module):
                 )
         
         # Архитектура с 6 слоями
-        elif n_layers == '6':
+        else:
             if use_batch_norm:
                 self.DNN = nn.Sequential(
                     nn.BatchNorm1d(input_dim),
@@ -129,8 +129,7 @@ class BaseModel(nn.Module):
                 nn.Dropout(p=dropout_rate)
             )
         
-        # Архитектура с 6 слоями
-        elif n_layers == '6':
+        else:
             self.DNN = nn.Sequential(
                 nn.Linear(base_dim, base_dim),
                 nn.ELU(),
@@ -221,8 +220,7 @@ class TauNetwork(nn.Module):
 
 class DESCN(nn.Module):
     """DESCN (Deep End-to-end Stochastic Causal Network)"""
-    def __init__(self, input_dim, share_dim, base_dim, do_rate, device, batch_norm=False,
-                 normalization="none", descn_version='3'):
+    def __init__(self, input_dim, share_dim, base_dim, do_rate, device, batch_norm=False, normalization="none", descn_version='3'):
         super(DESCN, self).__init__()
         
         cfg = {

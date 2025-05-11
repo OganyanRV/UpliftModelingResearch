@@ -8,8 +8,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Union, Optional, Tuple
 from torch.utils.data import DataLoader
 from src.models.IModelUplift import IModelUplift
-from src.datasets import TorchDataset
+from src.datasets import TorchDataset, PairedUpliftDataset
 from src.metric import get_auuc_v2
+import torch.nn.functional as F
 
 class INNUpliftModeling(IModelUplift):
     """
@@ -309,7 +310,110 @@ class INNUpliftModeling(IModelUplift):
             'p_escr': p_escr,
             'p_prpsy': p_prpsy
         }
-    
+
+    def fit_kdsm(self, X_train: PairedUpliftDataset, lambda_kd=0.5):
+        """
+        KDSM Обучение модели с валидацией.            
+        История обучения (словарь с метриками по эпохам)
+        """
+        train_size = int(0.8 * len(X_train))
+        
+        self.model.train()
+        
+        epochs = 2
+        batch_size = 1
+        early_stopping_patience = 2
+        accumulation_steps = 64
+        effective_batch_size = batch_size * accumulation_steps
+        
+        train_loader = self._prepare_data_loader(X_train, batch_size, shuffle=True)
+        
+        best_loss = float('inf')
+        early_stopping_criterion = 'loss'
+        patience_counter = 0
+        
+        history = {
+            'epoch': [],
+            'train_loss': [],
+            'val_loss': [],
+            'learning_rate': []
+        }
+        
+        for epoch in range(epochs):
+            epoch_loss = 0.0
+            epoch_kdsm_loss = 0.0
+            num_batches = 0
+            
+            self.model.train()
+            
+            for batch_idx, batch in enumerate(train_loader):
+                X_train.shuffle_pairs()
+                train_loader = self._prepare_data_loader(X_train, batch_size, shuffle=True)
+                
+                self.model.train()
+                t_features, t_treatment, t_outcome, t_teacher_pred, c_features, c_treatment, c_outcome, c_teacher_pred = batch
+                
+                t_outputs = self.model(t_features)
+                t_pred = t_outputs['p_mu1']  # Вероятность положительного исхода при воздействии
+                
+                c_outputs = self.model(c_features)
+                c_pred = c_outputs['p_mu0']  # Вероятность положительного исхода без воздействия
+                
+                student_uplift = t_pred - c_pred
+                
+                teacher_uplift = t_teacher_pred - c_teacher_pred
+
+                t_loss = self._compute_loss(t_outputs, t_outcome, t_treatment)
+                c_loss = self._compute_loss(c_outputs, c_outcome, c_treatment)
+                
+                kd_loss = F.mse_loss(student_uplift.squeeze(), teacher_uplift.squeeze())
+                total_loss = t_loss + c_loss + lambda_kd * kd_loss
+
+                normalized_loss = total_loss / accumulation_steps
+                normalized_loss.backward()
+                
+                epoch_loss += normalized_loss.item() * accumulation_steps
+                num_batches += 1
+
+                # if (batch_idx % 50 == 0):
+                #     print(batch_idx)
+                #     print(kd_loss)
+                
+                if (batch_idx + 1) % accumulation_steps == 0 or (batch_idx + 1) == len(train_loader):
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
+                    if (batch_idx + 1) % 256 == 0:
+                        progress = (batch_idx + 1) / len(train_loader) * 100
+                        current_loss = epoch_loss / num_batches
+                        print(f"Epoch {epoch+1}/{epochs} - {progress:.1f}% - Loss: {current_loss:.4f}")
+             
+            avg_train_loss = epoch_loss / num_batches
+
+            
+            history['epoch'].append(epoch + 1)
+            history['train_loss'].append(avg_train_loss)
+            history['val_loss'].append(val_loss)
+            history['val_auuc'].append(val_auuc)
+            history['learning_rate'].append(self.optimizer.param_groups[0]['lr'])
+            
+            print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, "
+                  f"Val Loss: {val_loss:.4f}, Val AUUC: {val_auuc:.4f}, "
+                  f"LR: {self.optimizer.param_groups[0]['lr']:.6f}")
+            
+            if early_stopping_criterion == 'loss' and avg_train_loss < best_loss:
+                best_loss = avg_train_loss
+                patience_counter = 0                    
+                best_model_state = {name: param.clone() for name, param in self.model.state_dict().items()}
+            else:
+                patience_counter += 1
+                if patience_counter >= early_stopping_patience:
+                    print(f"Early stopping triggered after {epoch+1} epochs")
+                    
+                    self.model.load_state_dict(best_model_state)
+                    break
+        
+        self.history_kdsm = history
+        
     def predict_light(self, X: DataLoader):
         pass
     #     """
