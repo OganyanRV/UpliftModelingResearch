@@ -72,58 +72,6 @@ class ShareNetwork(nn.Module):
         
         # Сохраняем индексы линейных слоев для удобства
         self.linear_indices = [i for i, layer in enumerate(layers) if isinstance(layer, nn.Linear)]
-        
-<<<<<<< HEAD
-        # Архитектура с 6 слоями
-        else:
-            if use_batch_norm:
-                self.DNN = nn.Sequential(
-                    nn.BatchNorm1d(input_dim),
-                    nn.Linear(input_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, base_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate)
-                )
-            else:
-                self.DNN = nn.Sequential(
-                    nn.Linear(input_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, share_dim),
-                    nn.ELU(),
-                    nn.Dropout(p=dropout_rate),
-                    nn.Linear(share_dim, base_dim),
-                    nn.ELU()
-                )
-
-        self.DNN.apply(init_weights)
-        self.cfg = cfg
-        self.device = device
-=======
->>>>>>> 111c7cb (dscn distillation)
         self.to(device)
 
     def forward(self, x, return_intermediates=False):
@@ -265,13 +213,9 @@ class TauNetwork(nn.Module):
 
 class DESCN(nn.Module):
     """DESCN (Deep End-to-end Stochastic Causal Network)"""
-<<<<<<< HEAD
-    def __init__(self, input_dim, share_dim, base_dim, do_rate, device, batch_norm=False, normalization="none", descn_version='3'):
-=======
     def __init__(self, input_dim, share_dim, base_dim, do_rate, device, 
                  batch_norm=False, normalization="none", descn_version='3',
                  return_intermediates=False):
->>>>>>> 111c7cb (dscn distillation)
         super(DESCN, self).__init__()
         # Конфигурация модели
         cfg = {

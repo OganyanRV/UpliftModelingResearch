@@ -1,6 +1,9 @@
 from src.models.CausalML.Models import TModel, SModel, XModel, DRModel, UpliftRandomForestModel
 from src.models.ScikitML.Models import ClassTransformationModel, ClassTransformationRegModel
 from src.models.NNUpliftModeling.DESCNUpliftModel import DESCNUpliftModel
+from src.models.NNUpliftModeling.DESCNDistillation import DESCNDistillation
+from src.models.NNUpliftModeling.EFINUpliftModel import EFINUpliftModel
+
 from abc import ABC, abstractmethod
 from src.datasets import TorchDataset, NumpyDataset
 
@@ -72,6 +75,22 @@ class DESCNUpliftModelFactory(IFactory):
     @staticmethod
     def create(config_json, train_path, test_path):
         model = DESCNUpliftModel(config_json)
+        train = TorchDataset(train_path)
+        test = TorchDataset(test_path)
+        return model, train, test
+
+class DESCNDistillationFactory(IFactory):
+    @staticmethod
+    def create(config_json, train_path, test_path):
+        model = DESCNDistillation(config_json)
+        train = TorchDataset(train_path)
+        test = TorchDataset(test_path)
+        return model, train, test
+
+class EFINUpliftModelFactory(IFactory):
+    @staticmethod
+    def create(config_json, train_path, test_path):
+        model = EFINUpliftModel(config_json)
         train = TorchDataset(train_path)
         test = TorchDataset(test_path)
         return model, train, test

@@ -96,7 +96,7 @@ class EFIN(nn.Module):
         """
         t_true = torch.unsqueeze(is_treat, 1)
         
-        x_rep = feature_list.unsqueeze(2) * self.x_rep.weight.unsqueeze(0)
+        x_rep = features.unsqueeze(2) * self.x_rep.weight.unsqueeze(0)
 
         # Control Net
         dims = x_rep.size()
