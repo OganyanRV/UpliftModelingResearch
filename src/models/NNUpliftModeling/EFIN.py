@@ -10,7 +10,7 @@ class EFIN(nn.Module):
     """
     EFIN (Explicit Feature Interaction Network) для аплифт-моделирования.
     """
-    def __init__(self, input_dim, hc_dim, hu_dim, act_type='elu'):
+    def __init__(self, input_dim, hc_dim, hu_dim, act_type='elu', version='3'):
         """
         Инициализация модели EFIN.
         
@@ -39,20 +39,45 @@ class EFIN(nn.Module):
         self.t_rep = nn.Linear(1, hu_dim)
 
         # Control Net (для предсказания без воздействия)
-        self.c_fc1 = nn.Linear(input_dim * hu_dim, hc_dim)
-        self.c_fc2 = nn.Linear(hc_dim, hc_dim)
-        self.c_fc3 = nn.Linear(hc_dim, hc_dim // 2)
-        self.c_fc4 = nn.Linear(hc_dim // 2, hc_dim // 4)
-        out_dim = hc_dim // 4
+        if version == '3':
+            self.c_layers = nn.ModuleList([
+                nn.Linear(input_dim * hu_dim, hc_dim),
+                nn.Linear(hc_dim, hc_dim),
+                nn.Linear(hc_dim, hc_dim // 2),
+                nn.Linear(hc_dim // 2, hc_dim // 4)
+            ])
+            out_dim = hc_dim // 4
+        else: 
+            self.c_layers = nn.ModuleList([
+                nn.Linear(input_dim * hu_dim, hc_dim),
+                nn.Linear(hc_dim, hc_dim),
+                nn.Linear(hc_dim, hc_dim // 2),
+                nn.Linear(hc_dim // 2, hc_dim // 2),
+                nn.Linear(hc_dim // 2, hc_dim // 4),
+                nn.Linear(hc_dim // 4, hc_dim // 4)
+            ])
+            out_dim = hc_dim // 4
 
         self.c_logit = nn.Linear(out_dim, 1)
         self.c_tau = nn.Linear(out_dim, 1)
 
         # Uplift Net (для моделирования инкрементального эффекта)
-        self.u_fc1 = nn.Linear(hu_dim, hu_dim)
-        self.u_fc2 = nn.Linear(hu_dim, hu_dim // 2)
-        self.u_fc3 = nn.Linear(hu_dim // 2, hu_dim // 4)
-        out_dim = hu_dim // 4
+        if version == '3':
+            self.u_layers = nn.ModuleList([
+                nn.Linear(hu_dim, hu_dim),
+                nn.Linear(hu_dim, hu_dim // 2),
+                nn.Linear(hu_dim // 2, hu_dim // 4)
+            ])
+            out_dim = hu_dim // 4
+        else:
+            self.u_layers = nn.ModuleList([
+                nn.Linear(hu_dim, hu_dim),
+                nn.Linear(hu_dim, hu_dim // 2),
+                nn.Linear(hu_dim // 2, hu_dim // 2),
+                nn.Linear(hu_dim // 2, hu_dim // 4),
+                nn.Linear(hu_dim // 4, hu_dim // 4)
+            ])
+            out_dim = hu_dim // 4
         
         self.t_logit = nn.Linear(out_dim, 1)
         self.u_tau = nn.Linear(out_dim, 1)
@@ -105,7 +130,9 @@ class EFIN(nn.Module):
 
         _x_rep = torch.reshape(xx, (dims[0], dims[1] * dims[2]))
 
-        c_last = self.act(self.c_fc4(self.act(self.c_fc3(self.act(self.c_fc2(self.act(self.c_fc1(_x_rep))))))))
+        c_last = _x_rep
+        for layer in self.c_layers:
+            c_last = self.act(layer(c_last))
         
         c_logit = self.c_logit(c_last)
         c_tau = self.c_tau(c_last)
@@ -115,8 +142,10 @@ class EFIN(nn.Module):
         t_rep = self.t_rep(torch.ones_like(t_true))
 
         xt, xt_weight = self.interaction_attn(t_rep, x_rep)
-
-        u_last = self.act(self.u_fc3(self.act(self.u_fc2(self.act(self.u_fc1(xt))))))
+        
+        u_last = xt
+        for layer in self.u_layers:
+            u_last = self.act(layer(u_last))
 
         t_logit = self.t_logit(u_last)
         u_tau = self.u_tau(u_last)

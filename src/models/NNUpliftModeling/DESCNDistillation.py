@@ -28,7 +28,6 @@ class DESCNDistillation(INNUpliftModeling):
         
         self.teacher_model = teacher_model
         
-        # Настройки дистилляции из конфигурации
         self.distill_config = self.config.get('distillation', {})
         self.use_response_distill = self.distill_config.get('use_response_distill', True)
         self.use_feature_distill = self.distill_config.get('use_feature_distill', False)

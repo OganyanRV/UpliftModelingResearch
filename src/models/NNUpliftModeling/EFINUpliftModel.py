@@ -25,6 +25,7 @@ class EFINUpliftModel(INNUpliftModeling):
         hc_dim = self.config.get('hc_dim', 128)
         hu_dim = self.config.get('hu_dim', 64)
         act_type = self.config.get('act_type', 'elu')
+        version = self.config.get('efin_version', '3')
         
         if input_dim is None:
             raise ValueError("input_dim must be specified in the config")
@@ -33,7 +34,8 @@ class EFINUpliftModel(INNUpliftModeling):
             input_dim=input_dim,
             hc_dim=hc_dim,
             hu_dim=hu_dim,
-            act_type=act_type
+            act_type=act_type,
+            version=version
         ).to(self.device)
     
     def _compute_loss(self, outputs, outcome, treatment):
@@ -67,7 +69,8 @@ class EFINUpliftModel(INNUpliftModeling):
             'is_self': [True, False],
             'act_type': ['elu', 'relu', 'sigmoid', 'tanh'], 
             'batch_size': [32, 64, 128],
-            'learning_rate': [0.001, 0.01] 
+            'learning_rate': [0.001, 0.01],
+            'efin_version': ['3']
         }
         
         for key, value in params.items():
