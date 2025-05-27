@@ -1,0 +1,20 @@
+	Model	Path	Dataset	Features Percent	Latency (ms)	AUUC	Precision@30	Compressions
+0	SModel	exps3/lazada_v2/100/15	lazada_v2	100	1.77	0.0223	0.0069	{}
+1	SModel	exps3/lazada_v2/50/23	lazada_v2	50	1.95	0.0191	0.0061	{}
+2	TModel	exps3/lazada_v2/100/40	lazada_v2	100	4.61	0.0235	0.00705	{}
+3	TModel	exps3/lazada_v2/50/51	lazada_v2	50	3.5	0.0225	0.00621	{}
+4	XModel	exps3/lazada_v2/100/60	lazada_v2	100	4.9	0.0252	0.00712	{}
+5	XModel	exps3/lazada_v2/50/78	lazada_v2	50	4.7	0.0232	0.0063	{}
+6	ClassTransform	exps3/lazada_v2/100/86	lazada_v2	100	1.78	0.015	0.0055	{}
+7	ClassTransform	exps3/lazada_v2/50/98	lazada_v2	50	1.96	0.011	0.0049	{}
+8	DRModel	exps3/lazada_v2/100/105	lazada_v2	100	8.36	0.0271	0.00714	{}
+9	DRModel	exps3/lazada_v2/50/123	lazada_v2	50	10.5	0.0252	0.0068	{}
+10	UpliftRandomForest	exps3/lazada_v2/100/141	lazada_v2	100	30.1	0.036	0.0081	{}
+11	UpliftRandomForest	exps3/lazada_v2/100/153	lazada_v2	100	26.1	0.035	0.0079	{'pruning': True}
+12	UpliftRandomForest	exps3/lazada_v2/50/173	lazada_v2	50	56.08	0.031	0.0075	{}
+13	DESCN	exps3/lazada_v2/100/188	lazada_v2	100	7.61	0.033	0.0075	{'kdsm': True}
+14	DESCN	exps3/lazada_v2/100/197	lazada_v2	100	4.1	0.0317	0.0076	{'kdsm': True, 'response': True, 'feature': True}
+15	DESCN	exps3/lazada_v2/50/207	lazada_v2	50	7.43	0.03	0.0071	{'kdsm': True}
+16	EFIN	exps3/lazada_v2/100/226	lazada_v2	100	21.12	0.0349	0.0077	{'kdsm': True}
+17	EFIN	exps3/lazada_v2/100/242	lazada_v2	100	11.32	0.0341	0.0077	{'kdsm': True, 'response': True, 'feature': True}
+18	EFIN	exps3/lazada_v2/50/255	lazada_v2	50	15.2	0.0305	0.0073	{'kdsm': True}
